@@ -1,0 +1,99 @@
+#!/bin/bash
+#IPMItool PowerCycle Script
+#Author: Eralp K
+#Version: 1.1
+#Last Update: 3/23/2023
+
+cnt=0
+totalCnt=""
+HOSTIP=''
+USERID='Userid'
+PASSWD='Passw0rd'
+# BLADE='0'
+LOG=''
+
+        # Retreive the Time / date for using timestamps during the powercycle
+timestamp() {
+    date
+}
+
+        # Ask the user for the system location
+echo "What is the BMC's IP address?"
+    read file
+    HOSTIP=$file
+
+echo "IPMI Userid?"
+    read file
+    USERID=$file
+
+echo "IPMI Userid's Password?"
+    read file
+    PASSWD=$file
+
+echo "Enter filename for saving the Powercycle Log (.txt is not required)"
+    read file
+    LOG=$file
+
+echo "How many hours do you want to run?"
+    read hours
+	let totalCnt=$((((hours * 60)) / 13)) # 18
+     
+
+        #Start the test if the BMC is entered
+echo -e "\n*************************"
+echo 'Thank you' 
+echo 'Starting Power Cycle on BMC  => '${HOSTIP}' IPMI User => '${USERID}'' >> /c/Users/user/Documents/scripts/logs/${LOG}.txt
+echo "Start Time @ $(timestamp)"
+echo "Total Powercycle time: ${hours} Hours with ${totalCnt} Cycles"
+echo "Total Powercycle time: ${hours} Hours with ${totalCnt} Cycles" >> /c/Users/user/Documents/scripts/logs/${LOG}.txt
+echo "BMC  => '${HOSTIP}'"
+echo "IPMI User => '${USERID}'"
+echo "Log Filename will be => ${LOG}.txt"
+echo "Start Time @ $(timestamp)" >> /c/Users/user/Documents/scripts/logs/${LOG}.txt
+echo '*************************' >> /c/Users/user/Documents/scripts/logs/${LOG}.txt
+echo '*************************'
+
+        # Begin the powercycle with a Power On cmd
+ssh_Loop(){
+  # Comment out for Cycle only
+  # echo -e '\nPower OFF System now' >> /c/Users/user/Documents/scripts/logs/${LOG}.txt
+  #       ./ipmitool/ipmitool.exe -I lanplus -H ${HOSTIP} -U ${USERID} -P ${PASSWD} power off
+  #   echo -e '\nWaiting 3 mins for Power Off....' >> /c/Users/user/Documents/scripts/logs/${LOG}.txt
+  # echo 'Power ON System now' >> /c/Users/user/Documents/scripts/logs/${LOG}.txt
+  #       ./ipmitool/ipmitool.exe -I lanplus -H ${HOSTIP} -U ${USERID} -P ${PASSWD} power on
+  #   echo -e '\nWaiting 10 mins to Power On....' >> /c/Users/user/Documents/scripts/logs/${LOG}.txt 
+  # Comment out for Cycle only
+  echo -e "\nReboot System now:" >> /c/Users/user/Documents/scripts/logs/${LOG}.txt
+        ./ipmitool/ipmitool.exe -I lanplus -H ${HOSTIP} -U ${USERID} -P ${PASSWD} power reset
+  #   sleep 1m
+  # echo -e "\nSUT Status Check1:" >> /c/Users/user/Documents/scripts/logs/${LOG}.txt 
+  #       ./ipmitool/ipmitool.exe -I lanplus -H ${HOSTIP} -U ${USERID} -P ${PASSWD} power status >> /c/Users/user/Documents/scripts/logs/${LOG}.txt 
+    sleep 10m     #Pause for 10 mins for system power on cmd
+      echo -e "\nSUT Status Check:" >> /c/Users/user/Documents/scripts/logs/${LOG}.txt 
+        ./ipmitool/ipmitool.exe -I lanplus -H ${HOSTIP} -U ${USERID} -P ${PASSWD} power status >> /c/Users/user/Documents/scripts/logs/${LOG}.txt    
+  return
+}
+
+        # Run ssh_Loop until the cnt limit is reached
+while [ $cnt -lt $totalCnt ]; do
+  
+  ssh_Loop 
+  sleep 3m
+  cnt=$((cnt+1))
+  
+  #echo "Restart Count = ${cnt}" >> /c/Users/user/Documents/scripts/logs${LOG}.txt
+   echo -e "\nSUT Status Check2:" >> /c/Users/user/Documents/scripts/logs/${LOG}.txt
+       ./ipmitool/ipmitool.exe -I lanplus -H ${HOSTIP} -U ${USERID} -P ${PASSWD} power status >> /c/Users/user/Documents/scripts/logs/${LOG}.txt
+  #echo $(timestamp)   #Print out the current timestamp
+  echo -e "\nBMC Connection Check:" >> /c/Users/user/Documents/scripts/logs/${LOG}.txt
+    ping -n 2 ${HOSTIP} >> /c/Users/user/Documents/scripts/logs/${LOG}.txt
+
+  echo -e "\nCycles Completed = ${cnt} @ $(timestamp)"
+  echo -e "\nCycles Completed = ${cnt} @ $(timestamp)" >> /c/Users/user/Documents/scripts/logs/${LOG}.txt
+  echo "-----------------------------------" >> /c/Users/user/Documents/scripts/logs/${LOG}.txt
+  echo "-----------------------------------"
+done
+
+  echo -e "\nTest Completed $(timestamp) on ${HOSTIP}"
+  echo -e "\nTest Completed $(timestamp) on ${HOSTIP}" >> /c/Users/user/Documents/scripts/logs/${LOG}.txt
+exit
